@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Dynamics 365 Case Form Sample</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Segoe UI alternative -->
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        /* Custom D365 Colors */
+        .bg-d365-nav { background-color: #000000; }
+        .bg-d365-header { background-color: #ffffff; }
+        .bg-d365-command { background-color: #f3f2f1; }
+        .text-d365-blue { color: #0078d4; }
+        .border-d365-blue { border-color: #0078d4; }
+        
+        /* Tab Styling */
+        .tab-link {
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+        .tab-link.active {
+            border-bottom: 2px solid #0078d4;
+            font-weight: 600;
+        }
+
+        /* Form Field Styling */
+        .d365-label {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 2px;
+            display: block;
+        }
+        .d365-input {
+            border: 1px solid transparent; /* Invisible border by default */
+            border-bottom: 1px solid #666; /* Underline style */
+            width: 100%;
+            padding: 4px 0;
+            background: transparent;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+        .d365-input:hover {
+            border: 1px solid #999;
+            padding-left: 5px;
+            background-color: #fff;
+        }
+        .d365-input:focus {
+            border: 1px solid #0078d4;
+            outline: none;
+            padding-left: 5px;
+            background-color: #fff;
+        }
+        .required-asterisk {
+            color: #a80000;
+            font-weight: bold;
+            margin-right: 2px;
+        }
+
+        /* Timeline Styling */
+        .timeline-line {
+            position: absolute;
+            left: 20px;
+            top: 10px;
+            bottom: 0;
+            width: 2px;
+            background-color: #e1dfdd;
+            z-index: 0;
+        }
+        .timeline-item {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header KPI Tiles */
+        .header-tile-label {
+            font-size: 0.75rem;
+            color: #666;
+        }
+        .header-tile-value {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #0078d4;
+        }
+
+        /* Breadcrumb Arrow */
+        .breadcrumb-separator::after {
+            content: '\f105'; /* FontAwesome angle-right */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin: 0 8px;
+            color: #999;
+            font-size: 0.8rem;
+        }
+
+        /* Business Process Flow Arrow shape */
+        .bpf-stage-arrow {
+            width: 0; 
+            height: 0; 
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+            border-left: 15px solid white;
+            position: absolute;
+            right: -15px;
+            top: 0;
+            z-index: 20;
+        }
+        .bpf-stage-container {
+             clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 50%, calc(100% - 15px) 100%, 0% 100%);
+        }
+        .bpf-stage-active {
+            clip-path: polygon(0% 0%, calc(100% - 15px) 0%, 100% 50%, calc(100% - 15px) 100%, 0% 100%, 15px 50%);
+        }
+
+        /* Custom Scrollbar for panels */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <!-- 1. Top Navigation Bar (Global) -->
+    <div class="bg-d365-nav text-white h-12 flex items-center px-4 justify-between shadow-md z-50">
+        <div class="flex items-center gap-4">
+            <div class="grid grid-cols-3 gap-1 w-5 h-5 cursor-pointer">
+                <div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div>
+                <div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div>
+                <div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div><div class="bg-white rounded-sm"></div>
+            </div>
+            <span class="font-semibold text-lg tracking-tight">Dynamics 365</span>
+            <span class="text-gray-400 text-sm">|</span>
+            <span class="text-sm">One TT&I</span>
+        </div>
+        <div class="flex items-center gap-4 text-sm">
+            <i class="fas fa-search cursor-pointer hover:text-gray-300"></i>
+            <i class="fas fa-plus cursor-pointer hover:text-gray-300"></i>
+            <i class="fas fa-cog cursor-pointer hover:text-gray-300"></i>
+            <i class="fas fa-question-circle cursor-pointer hover:text-gray-300"></i>
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold border border-white cursor-pointer">
+                JD
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Command Bar -->
+    <div class="bg-d365-command border-b border-gray-300 px-2 py-1 flex items-center gap-1 text-sm">
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-save text-blue-700"></i> Save
+        </button>
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-save text-gray-500"></i> Save & Close
+        </button>
+        <div class="h-5 w-px bg-gray-300 mx-1"></div>
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-check-circle text-green-600"></i> Resolve Case
+        </button>
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-ban text-red-600"></i> Cancel Case
+        </button>
+        <div class="h-5 w-px bg-gray-300 mx-1"></div>
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-user-plus text-gray-600"></i> Assign
+        </button>
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-envelope text-gray-600"></i> Email Link
+        </button>
+        <div class="flex-grow"></div>
+        <button class="flex items-center gap-2 px-3 py-1 hover:bg-white border border-transparent hover:border-gray-300 rounded-sm transition text-gray-700">
+            <i class="fas fa-refresh text-gray-600"></i> Refresh
+        </button>
+    </div>
+
+    <!-- 3. Page Header (Breadcrumbs + Title + KPIs) -->
+    <div class="bg-white px-6 py-3 flex justify-between items-center border-b border-gray-200">
+        <div class="flex flex-col">
+            <div class="text-xs text-blue-700 font-semibold mb-1 flex items-center">
+                Service <span class="breadcrumb-separator"></span> Cases <span class="breadcrumb-separator"></span> CAS-01292-X4K9
+            </div>
+            <h1 class="text-2xl font-light text-gray-800">CPE Quote Assistance</h1>
+        </div>
+        
+        <!-- Header Fields / KPIs -->
+        <div class="flex gap-8 mr-4">
+            <div class="flex flex-col min-w-[100px]">
+                <span class="header-tile-label"><i class="fas fa-exclamation-circle mr-1 text-yellow-500"></i> Priority</span>
+                <span class="header-tile-value">Normal</span>
+            </div>
+            <div class="flex flex-col min-w-[100px]">
+                <span class="header-tile-label"><i class="fas fa-info-circle mr-1 text-blue-500"></i> Status</span>
+                <span class="header-tile-value">Active</span>
+            </div>
+            <div class="flex flex-col min-w-[100px]">
+                <span class="header-tile-label"><i class="fas fa-user mr-1 text-gray-500"></i> Owner</span>
+                <span class="header-tile-value hover:underline cursor-pointer">Jane Doe</span>
+            </div>
+            <div class="flex flex-col min-w-[100px]">
+                <span class="header-tile-label"><i class="far fa-calendar-alt mr-1 text-gray-500"></i> Created On</span>
+                <span class="header-tile-value">10/24/2023 9:15 AM</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3b. Business Process Flow (Status Bar) -->
+    <div class="bg-white border-b border-gray-200 py-3 px-6 shadow-sm z-10">
+        <div class="flex items-center gap-1">
+             <!-- Stage 1: Deal Inspection (Active) -->
+             <div class="flex-1 relative h-12 bg-white border border-blue-600 rounded-l-full flex items-center pl-2 group shadow-md z-30">
+                 <div class="w-6 h-6 rounded-full border-2 border-blue-600 flex items-center justify-center bg-white z-10 shrink-0">
+                     <div class="w-3 h-3 bg-white rounded-full border-2 border-blue-600"></div>
+                 </div>
+                 <div class="ml-2 flex flex-col justify-center">
+                     <span class="text-xs text-blue-800 font-bold">Deal Inspection</span>
+                     <span class="text-[10px] text-gray-500">Est. Complete: 10/25/2023</span>
+                 </div>
+                 <div class="absolute right-[-13px] top-[-1px] h-[50px] w-[26px] bg-white border-r border-t border-blue-600 transform rotate-45 z-20"></div>
+             </div>
+
+             <!-- Stage 2: Assigned -->
+             <div class="flex-1 relative h-12 bg-gray-50 border border-gray-200 flex items-center pl-8 ml-3 z-20">
+                 <!-- Left Cutout -->
+                 <div class="absolute left-[-13px] top-[-1px] h-[50px] w-[26px] bg-gray-50 border-r border-t border-gray-200 transform rotate-45 z-0"></div>
+                 
+                 <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center bg-gray-50 z-10 shrink-0 ml-1"></div>
+                 <div class="ml-2 flex flex-col justify-center z-10">
+                     <span class="text-xs text-gray-500 font-semibold">Assigned</span>
+                     <span class="text-[10px] text-gray-400">Est. Complete: 10/25/2023</span>
+                 </div>
+                 
+                 <!-- Right Arrow -->
+                 <div class="absolute right-[-13px] top-[-1px] h-[50px] w-[26px] bg-gray-50 border-r border-t border-gray-200 transform rotate-45 z-20"></div>
+             </div>
+
+             <!-- Stage 3: Working -->
+             <div class="flex-1 relative h-12 bg-gray-50 border border-gray-200 flex items-center pl-8 ml-3 z-10">
+                 <div class="absolute left-[-13px] top-[-1px] h-[50px] w-[26px] bg-gray-50 border-r border-t border-gray-200 transform rotate-45 z-0"></div>
+                 
+                 <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center bg-gray-50 z-10 shrink-0 ml-1"></div>
+                 <div class="ml-2 flex flex-col justify-center z-10">
+                     <span class="text-xs text-gray-500 font-semibold">Working</span>
+                     <span class="text-[10px] text-gray-400">Est. Complete: 10/27/2023</span>
+                 </div>
+                 
+                 <div class="absolute right-[-13px] top-[-1px] h-[50px] w-[26px] bg-gray-50 border-r border-t border-gray-200 transform rotate-45 z-20"></div>
+             </div>
+
+             <!-- Stage 4: Complete -->
+              <div class="flex-1 relative h-12 bg-gray-50 border border-gray-200 flex items-center pl-8 ml-3 rounded-r-md z-0">
+                 <div class="absolute left-[-13px] top-[-1px] h-[50px] w-[26px] bg-gray-50 border-r border-t border-gray-200 transform rotate-45 z-0"></div>
+                 
+                 <div class="w-6 h-6 rounded-full border-2 border-gray-300 flex items-center justify-center bg-gray-50 z-10 shrink-0 ml-1"></div>
+                 <div class="ml-2 flex flex-col justify-center z-10">
+                     <span class="text-xs text-gray-500 font-semibold">Complete</span>
+                     <span class="text-[10px] text-gray-400">Est. Complete: 10/30/2023</span>
+                 </div>
+             </div>
+        </div>
+    </div>
+
+    <!-- 4. Tabs Navigation -->
+    <div class="bg-white px-6 border-b border-gray-200 flex gap-6 text-sm">
+        <div class="tab-link active py-3 text-gray-800" onclick="switchTab(this, 'summary')">Summary</div>
+        <div class="tab-link py-3 text-gray-600 hover:text-gray-800" onclick="switchTab(this, 'details')">Details</div>
+        <div class="tab-link py-3 text-gray-600 hover:text-gray-800" onclick="switchTab(this, 'relationships')">Case Relationships</div>
+        <div class="tab-link py-3 text-gray-600 hover:text-gray-800" onclick="switchTab(this, 'sla')">SLA</div>
+        <div class="tab-link py-3 text-gray-600 hover:text-gray-800" onclick="switchTab(this, 'related')">Related</div>
+    </div>
+
+    <!-- 5. Main Content Area -->
+    <div class="flex-grow overflow-y-auto custom-scroll p-4 bg-gray-100">
+        
+        <!-- SUMMARY TAB CONTENT -->
+        <div id="summary-tab" class="grid grid-cols-12 gap-4 h-full">
+            
+            <!-- COLUMN 1: General Information (30%) -->
+            <div class="col-span-12 lg:col-span-3 flex flex-col gap-4">
+                <div class="bg-white shadow-sm rounded-sm p-4 border border-gray-200">
+                    <h3 class="font-semibold text-lg mb-4 text-gray-800">General Information</h3>
+                    
+                    <div class="space-y-4">
+                        <!-- Field Block -->
+                        <div>
+                            <label class="d365-label"><span class="required-asterisk">*</span>Case Title</label>
+                            <input type="text" class="d365-input" value="CPE Quote Assistance">
+                        </div>
+                        
+                        <!-- Field Block -->
+                        <div>
+                            <label class="d365-label">Case Number</label>
+                            <div class="d365-input bg-gray-50 text-gray-600 cursor-not-allowed border-none">CAS-01292-X4K9</div>
+                        </div>
+
+                        <!-- NEW FIELD: Case Type -->
+                        <div>
+                            <label class="d365-label">Case Type</label>
+                            <div class="relative">
+                                <input type="text" class="d365-input text-blue-600 cursor-pointer" value="One TT&I">
+                                <i class="fas fa-search absolute right-2 top-1 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                         <!-- Field Block -->
+                         <div>
+                            <label class="d365-label">Request Type</label>
+                            <div class="relative">
+                                <input type="text" class="d365-input text-blue-600 cursor-pointer" value="CPE Request">
+                                <i class="fas fa-search absolute right-2 top-1 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- Field Block -->
+                        <div>
+                            <label class="d365-label"><span class="required-asterisk">*</span>Customer</label>
+                            <div class="relative">
+                                <input type="text" class="d365-input text-blue-600 font-semibold cursor-pointer" value="Adventure Works (Sample)">
+                                <i class="fas fa-search absolute right-2 top-1 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                         <!-- Field Block -->
+                         <div>
+                            <label class="d365-label">Product(s)</label>
+                            <div class="relative">
+                                <input type="text" class="d365-input text-blue-600 cursor-pointer" value="Managed Network Services, CPE, FWA">
+                                <i class="fas fa-search absolute right-2 top-1 text-gray-400 text-xs"></i>
+                            </div>
+                        </div>
+
+                        <!-- Field Block -->
+                        <div class="pt-2">
+                            <label class="d365-label">Request Description</label>
+                            <textarea class="d365-input h-24 resize-none border-b border-gray-300">Update the Motorola GID16 table with a new MOA (Master Order Agreement).  The MOA was for reducing the price of a VDM on a Juniper router.  Update GID16 to reflect specific price per PCM approved MOA.</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 2: Timeline (40%) -->
+            <div class="col-span-12 lg:col-span-6 flex flex-col">
+                <div class="bg-white shadow-sm rounded-sm p-0 border border-gray-200 h-full flex flex-col">
+                    
+                    <!-- Timeline Header -->
+                    <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                        <h3 class="font-semibold text-lg text-gray-800">Timeline</h3>
+                        <div class="flex gap-2">
+                            <i class="fas fa-plus text-gray-500 hover:text-gray-800 cursor-pointer p-1"></i>
+                            <i class="fas fa-filter text-gray-500 hover:text-gray-800 cursor-pointer p-1"></i>
+                            <i class="fas fa-search text-gray-500 hover:text-gray-800 cursor-pointer p-1"></i>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Input (Quick Create) -->
+                    <div class="p-4 border-b border-gray-200">
+                         <div class="flex gap-4 text-sm text-gray-600 mb-2 border-b border-gray-100 pb-2">
+                             <span class="cursor-pointer hover:text-blue-600 font-semibold border-b-2 border-blue-600 pb-2 -mb-2.5">Enter a Note</span>
+                             <span class="cursor-pointer hover:text-blue-600">Create a Post</span>
+                         </div>
+                         <div class="relative">
+                             <input type="text" placeholder="Enter a note..." class="w-full bg-gray-100 p-2 rounded text-sm focus:bg-white focus:ring-1 focus:ring-blue-500 outline-none border border-transparent focus:border-blue-500 transition">
+                             <div class="flex justify-between items-center mt-2">
+                                <div class="flex gap-2 text-gray-400 text-sm">
+                                    <i class="fas fa-paperclip hover:text-gray-600 cursor-pointer"></i>
+                                    <i class="fas fa-image hover:text-gray-600 cursor-pointer"></i>
+                                </div>
+                                <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold hover:bg-blue-700">Add Note</button>
+                             </div>
+                         </div>
+                    </div>
+
+                    <!-- Timeline Feed -->
+                    <div class="p-4 overflow-y-auto flex-grow relative custom-scroll">
+                        <div class="timeline-line"></div>
+
+                        <!-- Item 1: ServiceNow Request (Replacing Phone Call) -->
+                        <div class="timeline-item flex gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-[#293E40] text-white flex items-center justify-center z-10 shadow-sm shrink-0 font-bold text-xs tracking-tighter">
+                                NOW
+                            </div>
+                            <div class="bg-white border border-gray-200 rounded p-3 flex-grow shadow-sm hover:shadow-md transition cursor-pointer">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-blue-700 text-sm">ServiceNow Integration</span>
+                                    <span class="text-xs text-gray-500">Just now</span>
+                                </div>
+                                <p class="text-sm text-gray-800">Your request has been received and is currently being reviewed</p>
+                                <div class="mt-2 flex gap-2">
+                                     <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Open</span>
+                                </div>
+                            </div>
+                        </div>
+
+                         <!-- Item 2: Auto Post (Updated Text) -->
+                         <div class="timeline-item flex gap-3 mb-6">
+                            <div class="w-10 h-10 rounded-full bg-gray-600 text-white flex items-center justify-center z-10 shadow-sm shrink-0">
+                                <i class="fas fa-magic fa-sm"></i>
+                            </div>
+                            <div class="bg-gray-50 border border-gray-200 rounded p-3 flex-grow shadow-sm">
+                                <div class="flex justify-between mb-1">
+                                    <span class="font-bold text-gray-700 text-sm">Case Created</span>
+                                    <span class="text-xs text-gray-500">10/24/2023 9:15 AM</span>
+                                </div>
+                                <p class="text-sm text-gray-600">Case was created by Jane Doe.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUMN 3: Related Info (30%) -->
+            <div class="col-span-12 lg:col-span-3 flex flex-col gap-4">
+                
+                <!-- Customer Details Card -->
+                <div class="bg-white shadow-sm rounded-sm p-0 border border-gray-200">
+                    <div class="p-3 border-b border-gray-100 bg-gray-50">
+                        <h3 class="font-semibold text-gray-800">Customer Details</h3>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">A</div>
+                            <div>
+                                <div class="font-bold text-blue-700 hover:underline cursor-pointer">Adventure Works</div>
+                                <div class="text-xs text-gray-500">Retail &bull; Redmond, WA</div>
+                            </div>
+                        </div>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex gap-2">
+                                <i class="fas fa-envelope text-gray-400 mt-1 w-4"></i>
+                                <a href="#" class="text-blue-600 hover:underline truncate">support@adventure-works.com</a>
+                            </div>
+                            <div class="flex gap-2">
+                                <i class="fas fa-phone text-gray-400 mt-1 w-4"></i>
+                                <span class="text-gray-700">555-0100</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <i class="fas fa-globe text-gray-400 mt-1 w-4"></i>
+                                <a href="#" class="text-blue-600 hover:underline">www.adventure-works.com</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teams Engaged Section -->
+                <div class="bg-white shadow-sm rounded-sm p-0 border border-gray-200">
+                    <div class="p-3 border-b border-gray-100 bg-gray-50">
+                        <h3 class="font-semibold text-gray-800">Teams Engaged</h3>
+                    </div>
+                    <div class="p-2 overflow-y-auto max-h-64 custom-scroll">
+                        <div class="space-y-1">
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Governance Tools & Innovation: DLM</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" checked class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">CPE Support: CPE</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: DRA-EMEA</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: DRA-US</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: IA-EMEA</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: IA-US</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: CPE Assessment</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: CPE/CPE Services Strategy & Operational Enablement</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: Converged Services Support</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: Center of Excellence (COE)-EMEA</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: Center of Excellence (COE)-US</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: Center of Excellence (COE)-APAC</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Deal Assurance: Center of Excellence Public Sector</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tech Ops & Architecture: Global Integrated Architect-US</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tech Ops & Architecture: Global Integrated Architect-EMEA & APAC</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tech Ops & Architecture: Service Delivery Architect (SDA)-US</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tech Ops & Architecture: Service Delivery Architect (SDA)-EMEA</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tech Ops & Architecture: Service Delivery Architect (SDA)-APAC</span>
+                            </label>
+                            <label class="flex items-start gap-2 p-1 hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                                <span class="text-sm text-gray-700">Tech Ops & Architecture: Integrated Contract Management</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Cases List -->
+                <div class="bg-white shadow-sm rounded-sm p-0 border border-gray-200 flex-grow">
+                    <div class="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                        <h3 class="font-semibold text-gray-800">Recent Cases</h3>
+                        <i class="fas fa-external-link-alt text-gray-400 text-xs cursor-pointer hover:text-blue-600"></i>
+                    </div>
+                    <div class="overflow-y-auto max-h-64">
+                         <div class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition">
+                            <div class="text-blue-700 font-semibold text-sm mb-1 truncate">New CPE Template</div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>CAS-01102</span>
+                                <span class="text-green-600 font-medium">Resolved</span>
+                            </div>
+                        </div>
+                        <div class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition">
+                            <div class="text-blue-700 font-semibold text-sm mb-1 truncate">CPE Quote Assistance</div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>CAS-00945</span>
+                                <span class="text-green-600 font-medium">Resolved</span>
+                            </div>
+                        </div>
+                        <div class="p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition">
+                            <div class="text-blue-700 font-semibold text-sm mb-1 truncate">Update CPE discounts</div>
+                            <div class="flex justify-between text-xs text-gray-500">
+                                <span>CAS-00821</span>
+                                <span class="text-green-600 font-medium">Resolved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- OTHER TABS PLACEHOLDER (Hidden by default) -->
+        <div id="details-tab" class="hidden h-full flex items-center justify-center text-gray-400">
+            <div class="text-center">
+                <i class="fas fa-info-circle text-4xl mb-2"></i>
+                <p>Additional details content would appear here.</p>
+            </div>
+        </div>
+        <div id="relationships-tab" class="hidden h-full flex items-center justify-center text-gray-400">
+             <div class="text-center">
+                <i class="fas fa-sitemap text-4xl mb-2"></i>
+                <p>Parent/Child case relationships would appear here.</p>
+            </div>
+        </div>
+        <div id="sla-tab" class="hidden h-full flex items-center justify-center text-gray-400">
+             <div class="text-center">
+                <i class="fas fa-stopwatch text-4xl mb-2"></i>
+                <p>SLA KPI Instances would appear here.</p>
+            </div>
+        </div>
+         <div id="related-tab" class="hidden h-full flex items-center justify-center text-gray-400">
+             <div class="text-center">
+                <i class="fas fa-link text-4xl mb-2"></i>
+                <p>Related entities (Activities, Connections) would appear here.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 6. Footer (Standard Status Bar) -->
+    <div class="bg-d365-command border-t border-gray-300 px-4 py-1 text-xs text-gray-600 flex justify-between items-center h-8">
+        <div class="flex gap-4">
+            <span><i class="fas fa-save mr-1"></i> Saved</span>
+            <span><i class="fas fa-download mr-1"></i> Data available offline</span>
+        </div>
+        <div>
+            <span>Read-only</span>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(element, tabId) {
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab-link');
+            tabs.forEach(tab => {
+                tab.classList.remove('active', 'border-b-2', 'border-blue-600', 'font-semibold');
+                tab.classList.add('text-gray-600');
+                tab.classList.remove('text-gray-800');
+            });
+
+            // Add active class to clicked tab
+            element.classList.add('active');
+            element.classList.remove('text-gray-600');
+            element.classList.add('text-gray-800');
+
+            // Hide all tab content
+            document.getElementById('summary-tab').classList.add('hidden');
+            document.getElementById('details-tab').classList.add('hidden');
+            document.getElementById('relationships-tab').classList.add('hidden');
+            document.getElementById('sla-tab').classList.add('hidden');
+            document.getElementById('related-tab').classList.add('hidden');
+
+            // Show selected tab content
+            document.getElementById(tabId + '-tab').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
